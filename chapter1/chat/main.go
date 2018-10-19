@@ -4,9 +4,12 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 	"sync"
 	"text/template"
+
+	"github.com/postmannen/bp-learning/chapter1/trace"
 )
 
 //templ represents a single template
@@ -33,6 +36,7 @@ func main() {
 	flag.Parse() // parse the flags
 
 	r := newRoom()
+	r.tracer = trace.New(os.Stdout)
 
 	//Root Handle.
 	//Here we send a type templateHandler directly in without
