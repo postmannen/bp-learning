@@ -1,0 +1,48 @@
+main
+    |
+    newRoom:
+    type room struct {
+        forward chan []byte
+        join chan *client
+        leave chan *client
+        clients map[*client]bool
+    }
+        
+    room.run 
+        Loop med for sløyfe
+            Lytt på kanalene:
+            Select:
+                <- room.join
+                    legg klienten inn i map room.clients
+                <- room.leave
+                    slett klienten fra map room.clients
+                    close på client.send kanalen
+                msg <- room.forward
+                    loop over alle klientene
+                        legg msg inn i 'client.send <- msg'
+                        så alle klientene får msg 
+
+    room.ServeHTTP "/"
+        Upgrade sessionen til en websocket
+        |
+        Start websocket.
+        Når en ny browser åpnes så lages en ny client :
+        type client struct {
+            socket *websocket.Conn
+            send chan []byte
+            room *room
+        }
+        |
+        Legg client i clients map : r.join <- client
+	    Fjern client fra clients map : defer func() { r.leave <- client }()
+        |
+        go client.write()
+            loop msg := client.send
+                hvis melding, skriv meldingen til client.socket.WriteMessage så den syns i browser
+        |
+        client.read()
+            loop msg := c.socket.ReadMessage()
+                hvis melding, skriv meldingen til rommet, så alle klientene kan snappe den opp
+                c.room.forward <- msg
+        
+
