@@ -10,6 +10,8 @@ import (
 	"text/template"
 
 	"github.com/postmannen/bp-learning/chapter1/trace"
+	"github.com/stretchr/gomniauth"
+	"github.com/stretchr/gomniauth/providers/google"
 )
 
 //templ represents a single template
@@ -32,8 +34,21 @@ func (t *templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+
 	var addr = flag.String("addr", ":8080", "The addr of the  application.")
 	flag.Parse() // parse the flags
+
+	// setup gomniauth
+	gomniauth.SetSecurityKey("PUT YOUR AUTH KEY HERE")
+	gomniauth.WithProviders(
+		//facebook.New("key", "secret",
+		//	"http://localhost:8080/auth/callback/facebook"),
+		//github.New("key", "secret",
+		//	"http://localhost:8080/auth/callback/github"),
+		google.New("1008756175538-30lreagdvr41c2molmvtv57tf79jv5o7.apps.googleusercontent.com",
+			"l4agwoZIaDEHkVTQEr_YA8X5",
+			"http://localhost:8080/auth/callback/google"),
+	)
 
 	r := newRoom()
 	r.tracer = trace.New(os.Stdout)
@@ -44,7 +59,9 @@ func main() {
 	//by preceding it with &.
 	//templateHandler have a serveHTTP method,
 	//and then becomes a handler
-	http.Handle("/", &templateHandler{filename: "chat.html"})
+	http.Handle("/chat", MustAuth(&templateHandler{filename: "chat.html"}))
+	http.Handle("/login", &templateHandler{filename: "login.html"})
+	http.HandleFunc("/auth/", loginHandler)
 	http.Handle("/room", r)
 
 	//start the room.
